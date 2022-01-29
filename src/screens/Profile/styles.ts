@@ -8,8 +8,6 @@ interface Props{
 }
 
 export const Container = styled.View`
-   flex: 1;
-  
    background-color: ${props => props.theme.colors.background_primary};
 `;
 
@@ -81,7 +79,6 @@ export const ChangeAvatarButton = styled(RectButton)`
 `;
 
 export const Content = styled.View`
-   flex: 1;
 
    padding: 0 24px;
 
@@ -124,4 +121,12 @@ export const OptionTitle = styled.Text<Props>`
       props.theme.colors.header :
       props.theme.colors.text_detail
    };
+`;
+
+export const UserDataForm = styled.View`
+
+`;
+
+export const InputsContainer = styled.View`
+
 `;

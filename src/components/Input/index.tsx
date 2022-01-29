@@ -10,7 +10,7 @@ import { TextInputProps, ViewStyle } from 'react-native';
 
 interface InputProps extends TextInputProps{
    iconName: React.ComponentProps<typeof Feather>["name"];
-   isFilled: boolean;
+   isFilled?: boolean;
    isPassword?: boolean;
    viewStyle?: ViewStyle;
 }
