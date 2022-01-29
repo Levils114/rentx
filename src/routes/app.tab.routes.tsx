@@ -2,7 +2,6 @@ import React from 'react';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import Home from '../screens/Home';
 import { MyCars } from '../screens/MyCars';
 
 import { useTheme } from 'styled-components';
@@ -13,6 +12,7 @@ import MyCarsSvg from "./../assets/car.svg";
 import ProfileSvg from "./../assets/people.svg";
 import { SvgProps } from 'react-native-svg';
 import { Platform } from 'react-native';
+import { Profile } from '../screens/Profile';
 
 const Tab = createBottomTabNavigator();
 
@@ -46,7 +46,7 @@ export function AppTabRoutes(){
       })}>
          <Tab.Screen name="Initial" component={AppStackRoutes}/>
          <Tab.Screen name="MyCars" component={MyCars}/>
-         <Tab.Screen name="Profile" component={Home}/>
+         <Tab.Screen name="Profile" component={Profile}/>
       </Tab.Navigator>
    );
 }

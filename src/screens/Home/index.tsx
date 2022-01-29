@@ -6,6 +6,7 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import { CarProps } from '../../@types/Car';
 import CarCard from '../../components/CarCard';
 import { LoadAnimated } from '../../components/LoadAnimated';
+import { database } from '../../database';
 import { api } from '../../services/api';
 
 import Logo from './../../assets/logo.svg';
@@ -40,20 +41,26 @@ export default function Home(){
    });
 
    useEffect(() => {
+      let isMounted = true;
+
       async function loadCars(){
          try{
             const response = await api.get('/cars');
             const { data } = response;
 
-            setCars(data);
+            if(isMounted) setCars(data);
          } catch(err){
             console.error(err);
          } finally{
-            setLoading(false);
+            if(isMounted) setLoading(false);
          }
       }
 
       loadCars();
+
+      return () => {
+         isMounted = false;
+      };
    }, []);
 
    useEffect(() => {
@@ -88,7 +95,7 @@ export default function Home(){
                showsVerticalScrollIndicator={false}
                onScroll={onScrollAnimated}
                contentContainerStyle={{
-                  paddingHorizontal: 24,
+                  padding: 24,
                }}
                scrollEventThrottle={16}
                renderScrollComponent={(props) => (

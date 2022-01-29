@@ -46,9 +46,9 @@ export function SignIn(){
 
    async function onSubmit(data: OnSubmitProps){
       try{
-         
          await handleSignIn(data);
       } catch(err){
+         console.error(err);
          setIsLoading(false);
       }
    }
