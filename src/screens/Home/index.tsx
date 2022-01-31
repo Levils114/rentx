@@ -1,3 +1,4 @@
+import { useNetInfo } from '@react-native-community/netinfo';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { BackHandler, FlatList, StatusBar, } from 'react-native';
@@ -16,6 +17,7 @@ import { Container, Header, TotalCars, HeaderContent } from './styles';
 const HeaderAnimated = Animated.createAnimatedComponent(Header);
 
 export default function Home(){
+   const netInfo = useNetInfo();
    const { navigate } = useNavigation();
 
    const [cars, setCars] = useState<CarProps[]>([]);

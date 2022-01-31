@@ -12,7 +12,7 @@ import MyCarsSvg from "./../assets/car.svg";
 import ProfileSvg from "./../assets/people.svg";
 import { SvgProps } from 'react-native-svg';
 import { Platform } from 'react-native';
-import { Profile } from '../screens/Profile';
+import { ProfileStack } from './profile.stack.routes';
 
 const Tab = createBottomTabNavigator();
 
@@ -25,9 +25,9 @@ export function AppTabRoutes(){
          tabBarIcon: ({ color }) => {
             let IconComponent: React.FC<SvgProps>;
 
-            if (route.name === 'Initial') {
+            if (route.name === 'HomeTab') {
                IconComponent = HomeSvg;
-            } else if (route.name === 'Profile') {
+            } else if (route.name === 'ProfileTab') {
                IconComponent = ProfileSvg;
             }  else if (route.name === 'MyCars') {
                IconComponent = MyCarsSvg;
@@ -44,9 +44,12 @@ export function AppTabRoutes(){
             backgroundColor: theme.colors.background_primary,
          }
       })}>
-         <Tab.Screen name="Initial" component={AppStackRoutes}/>
+         <Tab.Screen 
+            name="HomeTab" 
+            component={AppStackRoutes}
+         />
          <Tab.Screen name="MyCars" component={MyCars}/>
-         <Tab.Screen name="Profile" component={Profile}/>
+         <Tab.Screen name="ProfileTab" component={ProfileStack}/>
       </Tab.Navigator>
    );
 }

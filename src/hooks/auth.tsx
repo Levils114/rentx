@@ -26,6 +26,8 @@ interface HandleSignInProps{
 interface AuthContextProps{
    data: AuthStateProps;
    handleSignIn(props: HandleSignInProps): Promise<void>;
+   handleUpdateUser(props: UserProps): Promise<void>;
+   handleSignOut(): Promise<void>;
 }
 
 const AuthContext = createContext({} as AuthContextProps);
@@ -58,12 +60,14 @@ export const AuthProvider: React.FC = ({ children }) => {
 
    async function handleSignIn(props: HandleSignInProps){
       try {
+         let userToSave: User;
+
          const response = await api.post("/sessions", props);
          api.defaults.headers.authorization = `Bearer ${response.data.token}`;
 
          const userCollection = database.get<User>("users");
          await database.write(async() => {
-            userCollection.create((user) => {
+            userToSave = await userCollection.create((user) => {
                user.user_id = response.data.user.id;
                user.name = response.data.user.name;
                user.email = response.data.user.email;
@@ -74,8 +78,8 @@ export const AuthProvider: React.FC = ({ children }) => {
          });
          
          setData({
-            ...response.data,
-            user_id: response.data.user.id,
+            user: userToSave,
+            token: userToSave.token
          });
       } catch (err) {
          console.error(err);
@@ -87,8 +91,50 @@ export const AuthProvider: React.FC = ({ children }) => {
       }
    }
 
+   async function handleSignOut(){
+      try{
+         const userCollection = database.get<User>("users");
+         
+         await database.write(async() => {
+            const userSelected = await userCollection.find(data.user.id);
+            await userSelected.destroyPermanently();
+         });
+
+         setData({} as AuthStateProps);
+      } catch(err){
+         throw new Error(err);
+      }
+   }
+
+   async function handleUpdateUser(newUser: UserProps){
+      try{
+         const userCollection = database.get<User>("users");
+
+         await database.write(async() => {
+            const userSelected = await userCollection.find(data.user.id);
+            await userSelected.update((user) => {
+               user.name = newUser.name,
+               user.driver_license = newUser.driver_license,
+               user.avatar = newUser.avatar
+            });
+         });
+
+         setData(prevValue => ({
+            user: newUser,
+            ...prevValue
+         }));
+      } catch(err){
+        throw new Error(err);
+      }
+   }
+
    return(
-      <AuthContext.Provider value={{ data, handleSignIn }}>
+      <AuthContext.Provider value={{ 
+         data,
+         handleSignIn,
+         handleUpdateUser,
+         handleSignOut,
+      }}>
          {children}
       </AuthContext.Provider>
    );

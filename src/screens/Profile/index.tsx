@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from 'styled-components';
 import BackButton from '../../components/BackButton';
 import Feather from "@expo/vector-icons/Feather";
@@ -23,21 +23,45 @@ import {
 import { useAuth } from '../../hooks/auth';
 import { Input } from '../../components/Input';
 import Button from '../../components/Button';
-import { Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
+import { Controller, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from "yup";
 
 interface LauchImagePickerProps{
    cancelled: boolean;
    uri: string;
 }
 
+interface HandleUpdateUserDataProps{
+   name: string;
+   driver_license: string;
+}
+
+const changeUserDataSchema = yup.object().shape({
+   name: yup.string().required("Nome obrigatório"),
+   driver_license: yup.string().required("CNH obrigatório"),
+});
+
 export function Profile(){
    const theme = useTheme();
-   const { goBack } = useNavigation();
-   const { data: { user } } = useAuth();
+   const { goBack, navigate } = useNavigation();
+   const { data: { user }, handleUpdateUser, handleSignOut } = useAuth();
+   const { control, handleSubmit, formState: { errors } } = useForm({
+      resolver: yupResolver(changeUserDataSchema),
+   });
 
    const [option, setOption] = useState<"dataEdit" | "passwordEdit">("dataEdit");
    const [avatar, setAvatar] = useState(user.avatar);
+
+   useEffect(() => {
+      const errorsKeys = Object.keys(errors);
+
+      if(errorsKeys.length >= 1){
+         Alert.alert("Opa", errors[errorsKeys[0]].message);
+      }
+   }, [errors]);
 
    async function handleSelectImage(){
       try{
@@ -58,6 +82,35 @@ export function Profile(){
       }
    }
 
+   async function signOut(){
+      try{
+         Alert.alert(
+            "Tem certeza?",
+            "Caso você saia, precisará de internet para voltar ao app",
+            [
+               { text: "Não", onPress: () => {}, style: "cancel" },
+               { text: "Sair", onPress: async() => await handleSignOut() },
+            ]
+         );
+      } catch(err){
+         console.error(err);
+      }
+   }
+
+   async function handleUpdateUserData(data: HandleUpdateUserDataProps){
+      try{
+         await handleUpdateUser({
+            ...user,
+            ...data,
+            avatar
+         });
+
+         navigate("Complete" as never, { title: "Feito!", message: "Seu perfil foi atualizado", nextScreenRoute: "Profile" } as never);
+      } catch(err){
+         console.error(err);
+      }
+   }
+
    return(
       <KeyboardAvoidingView behavior='position' enabled>
          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -68,7 +121,7 @@ export function Profile(){
 
                   <HeaderTitle>Editar perfil</HeaderTitle>
 
-                  <LogoutButton onPress={() => {}}>
+                  <LogoutButton onPress={signOut}>
                      <Feather name="power" size={24} color={theme.colors.shape}/>
                   </LogoutButton>
                </HeaderTop>
@@ -110,11 +163,21 @@ export function Profile(){
                   <InputsContainer>
                      {option === "dataEdit" ? (
                         <>
-                        <Input 
-                           iconName="user"
-                           placeholder='Nome'
+                        <Controller 
+                           name="name"
+                           control={control}
                            defaultValue={user.name}
-                           isFilled={!!user.name}
+                           render={({ field: { value, onBlur, onChange } }) => (
+                              <Input 
+                                 value={value}
+                                 iconName="user"
+                                 placeholder='Nome'
+                                 defaultValue={user.name}
+                                 isFilled={!!value}
+                                 onChangeText={onChange}
+                                 onBlur={onBlur}
+                              />
+                           )}
                         />
 
                         <Input 
@@ -125,12 +188,30 @@ export function Profile(){
                            viewStyle={{ marginVertical: 8, }}
                         />
 
-                        <Input 
-                           iconName="credit-card"
-                           isFilled={!!user.name}
-                           placeholder='CNH'
+                        <Controller 
+                           name="driver_license"
+                           control={control}
                            defaultValue={user.driver_license}
-                           keyboardType='numeric'
+                           render={({ field: { value, onBlur, onChange } }) => (
+                              <Input 
+                                 value={value}
+                                 iconName="credit-card"
+                                 isFilled={!!value}
+                                 placeholder='CNH'
+                                 defaultValue={user.driver_license}
+                                 keyboardType='numeric'
+                                 onChangeText={onChange}
+                                 onBlur={onBlur}
+                              />
+                           )}
+                        />
+
+                        <Button 
+                           title='Salvar alterações'
+                           onPress={handleSubmit(handleUpdateUserData)}
+                           style={{
+                              marginTop: 16,
+                           }}
                         />
                         </>
                      ) : (
@@ -154,16 +235,16 @@ export function Profile(){
                            isPassword
                            viewStyle={{ marginTop: 8, }}
                         />
+
+                        <Button 
+                           title='Salvar alterações'
+                           style={{
+                              marginTop: 16,
+                           }}
+                        />
                         </>
                      )}
                   </InputsContainer>
-
-                  <Button 
-                     title='Salvar alterações'
-                     style={{
-                        marginTop: 16,
-                     }}
-                  />
                </UserDataForm>
             </Content>
          </Container>
