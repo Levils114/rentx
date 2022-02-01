@@ -4,15 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { BackHandler, FlatList, StatusBar, } from 'react-native';
 import Animated, { Extrapolate, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { CarProps } from '../../@types/Car';
 import CarCard from '../../components/CarCard';
 import { LoadAnimated } from '../../components/LoadAnimated';
+import { synchronize } from "@nozbe/watermelondb/sync";
 import { database } from '../../database';
 import { api } from '../../services/api';
 
 import Logo from './../../assets/logo.svg';
 
 import { Container, Header, TotalCars, HeaderContent } from './styles';
+import { Car } from '../../database/models/Car';
 
 const HeaderAnimated = Animated.createAnimatedComponent(Header);
 
@@ -20,7 +21,7 @@ export default function Home(){
    const netInfo = useNetInfo();
    const { navigate } = useNavigation();
 
-   const [cars, setCars] = useState<CarProps[]>([]);
+   const [cars, setCars] = useState<Car[]>([]);
    const [loading, setLoading] = useState(true);
 
    const scrollY = useSharedValue(0);
@@ -42,13 +43,53 @@ export default function Home(){
       scrollY.value = event.contentOffset.y;
    });
 
+   async function offlineSyncronize(){
+      try{
+         await synchronize({
+            database,
+            pullChanges: async ({ lastPulledAt }) => {
+               const response = await api.get(`/cars/sync/pull`, {
+                  params: {
+                     lastPulledVersion: lastPulledAt || 0,
+                  }
+               });
+
+               const { changes, latestVersion } = response.data;
+
+               return { changes, timestamp: latestVersion };
+            }, 
+            pushChanges: async ({ changes }) => {
+               console.log(changes.users);
+               const user = changes.users;
+               await api.post("/users/sync", user);
+            }
+         });
+      } catch(err){
+         console.error(err.response.data.message);
+      }
+   }
+
+   useEffect(() => {
+      async function syncLocalDbWithCloudDb(){
+         try{
+            if(netInfo.isConnected){
+               await offlineSyncronize();
+            }
+         } catch(err){
+            console.error(err);
+         }
+      }
+
+      syncLocalDbWithCloudDb();
+   }, [netInfo.isConnected]);
+
    useEffect(() => {
       let isMounted = true;
 
       async function loadCars(){
          try{
-            const response = await api.get('/cars');
-            const { data } = response;
+            const carsCollection = database.get<Car>("cars");
+            const data = await carsCollection.query().fetch();
 
             if(isMounted) setCars(data);
          } catch(err){

@@ -21,10 +21,11 @@ import {
    PeriodScheduled,
 } from './styles'
 import { useTheme } from 'styled-components';
+import { Car } from '../../database/models/Car';
 
 
 interface Props extends RectButtonProps{
-   carData: CarProps;
+   carData: Car;
    startDate?: string;
    endDate?: string;
 }

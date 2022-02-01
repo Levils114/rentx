@@ -26,7 +26,7 @@ export const Container = styled(RectButton)<Props>`
 `;
 
 export const Details = styled.View`
-
+   width: ${RFPercentage(6)}%;
 `;
 
 export const Brand = styled.Text`
