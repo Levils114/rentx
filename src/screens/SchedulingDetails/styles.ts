@@ -176,3 +176,14 @@ export const Footer = styled.View`
 
    padding: 24px 24px ${getBottomSpace() + 24}px;
 `;
+
+export const OfflineInfoText = styled.Text`
+   font-family: ${props => props.theme.fonts.primary_400};
+   font-size: ${RFValue(10)}px;
+
+   color: ${props => props.theme.colors.main};
+
+   text-align: center;
+
+   margin-top: 8px;
+`;

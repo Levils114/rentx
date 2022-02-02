@@ -3,6 +3,7 @@ import styled from 'styled-components/native'
 import { RectButton } from 'react-native-gesture-handler';
 import { RFPercentage, RFValue } from 'react-native-responsive-fontsize';
 import { css } from 'styled-components';
+import FastImage from 'react-native-fast-image';
 
 interface Props{
    hasStartPeriodScheduled: boolean;
@@ -68,7 +69,7 @@ export const Price = styled.Text`
    color: ${props => props.theme.colors.main};
 `;
 
-export const CarImage = styled.Image`
+export const CarImage = styled(FastImage)`
    width: 180px;
    height: 92px;
 `;

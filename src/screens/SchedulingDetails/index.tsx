@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'react-native';
 
 import { Feather } from '@expo/vector-icons';
@@ -31,16 +31,19 @@ import {
    RentalPriceQuota,
    RentalPriceTotal,
    Footer,
+   OfflineInfoText,
 } from './styles'
 import { useTheme } from 'styled-components';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { CarProps } from '../../@types/Car';
 import { getCorrectAccessoryIcon } from '../../utils/getAccessoryIcon';
 import { api } from '../../services/api';
+import { Car } from '../../database/models/Car';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { CarProps } from '../../@types/Car';
 
 interface Params{
-   car: CarProps;
+   car: Car;
    days: string[];
    firstDateFormated: string;
    lastDateFormated: string;
@@ -50,8 +53,10 @@ export function SchedulingDetails(){
    const { navigate, goBack } = useNavigation();
    const params = useRoute().params! as Params;
    const theme = useTheme();
+   const { isConnected } = useNetInfo();
 
    const [loadingRequest, setLoadingRequest] = useState(false);
+   const [carUpdated, setCarUpdated] = useState({} as CarProps);
 
    const rentTotal = useMemo(() => {
       return params.car.price * params.days.length;
@@ -61,26 +66,11 @@ export function SchedulingDetails(){
       try{
          setLoadingRequest(true);
 
-         const schedulesByCar = await api.get(`/schedules_bycars/${params.car.id}`);
-         let daysFormatted = {};
-
-         params.days.forEach((day, index) => {
-            daysFormatted = {
-               ...daysFormatted,
-               [Object.keys(schedulesByCar.data.unavailable_dates).length + index]: day,
-            }
-         });
-
-         await api.post("/schedules_byuser", {
-            user_id: 1,
-            car: params.car,
-            startDate: params.firstDateFormated,
-            endDate: params.lastDateFormated,
-         });
-
-         await api.put(`/schedules_bycars/${params.car.id}`, {
-            id: params.car.id,
-            unavailable_dates: {...daysFormatted, ...schedulesByCar.data.unavailable_dates},
+         await api.post("/rentals", {
+            car_id: params.car.id,
+            start_date: new Date(params.firstDateFormated + " 21:00:00"),
+            end_date: new Date(params.lastDateFormated + " 21:00:00"),
+            total: rentTotal,
          });
 
          setLoadingRequest(false);
@@ -92,9 +82,23 @@ export function SchedulingDetails(){
          } as never);
       } catch(err){
          setLoadingRequest(false);
-         console.error(err);
+         console.error(err.response.data);
       }
    }
+
+   useEffect(() => {
+      async function loadCarUpdated(){
+         try{
+            const response = await api.get(`/cars/${params.car.id}`);
+
+            setCarUpdated(response.data)
+         } catch(err){
+            console.error(err);
+         }
+      }
+
+      if(isConnected) loadCarUpdated();
+   }, [isConnected]);
 
    return(
       <Container>
@@ -109,7 +113,15 @@ export function SchedulingDetails(){
          </Header>
 
          <ImageSlider 
-            imagesUrl={params.car.photos}
+            imagesUrl={!!carUpdated.photos ?
+               carUpdated.photos
+            : [
+               {
+                  car_id: params.car.thumbnail,
+                  id: params.car.thumbnail,
+                  photo: params.car.thumbnail,
+               }
+            ]}
          />
 
          <Content>
@@ -121,15 +133,19 @@ export function SchedulingDetails(){
 
                <Rent>
                   <Period>{params.car.period}</Period>
-                  <Price>R$ {params.car.price}</Price>
+                  <Price>R$ {isConnected ? params.car.price : "..."}</Price>
                </Rent>
             </Details>
 
-            <AccessoriesContainer>
-               {params.car.accessories.map(accessory => (
-                  <Acessory key={accessory.type} name={accessory.name} icon={getCorrectAccessoryIcon(accessory.type)}/>
-               ))}
-            </AccessoriesContainer>
+            {!!carUpdated.accessories && (<AccessoriesContainer>
+               {carUpdated.accessories.map((accesorry => (
+                  <Acessory 
+                     key={accesorry.name}
+                     icon={getCorrectAccessoryIcon(accesorry.type)}
+                     name={accesorry.name}
+                  />
+               )))}
+            </AccessoriesContainer>)}
 
             <RentalPeriod>
                <CalendarIcon>
@@ -138,14 +154,14 @@ export function SchedulingDetails(){
 
                <DateInfo>
                   <DateTitle>DE</DateTitle>
-                  <DateValue>18/02/2022</DateValue>
+                  <DateValue>{params.firstDateFormated}</DateValue>
                </DateInfo>
 
                <Feather name="chevron-right" color={theme.colors.text} size={RFValue(16)}/>
 
                <DateInfo>
                   <DateTitle>ATÉ</DateTitle>
-                  <DateValue>27/02/2022</DateValue>
+                  <DateValue>{params.lastDateFormated}</DateValue>
                </DateInfo>
             </RentalPeriod>
 
@@ -160,7 +176,13 @@ export function SchedulingDetails(){
          </Content>
 
          <Footer>
-            <Button isLoading={loadingRequest} enabled={!loadingRequest} title='Alugar agora' color={theme.colors.success} onPress={handleSchedule}/>
+            <Button isLoading={loadingRequest} enabled={isConnected && !loadingRequest} title='Alugar agora' color={theme.colors.success} onPress={handleSchedule}/>
+            
+            {!isConnected && (
+               <OfflineInfoText>
+                  Conecte-se a internet para ver mais detalhes e agendar seu carro.
+               </OfflineInfoText>
+            )}
          </Footer>
       </Container>
    );

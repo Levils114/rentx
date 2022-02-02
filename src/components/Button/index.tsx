@@ -27,7 +27,7 @@ export default function Button({
    const theme = useTheme();
 
    return(
-      <Container color={color} {...rest} style={[rest.style, { opacity: enabled ? 1 : .5 }]}>
+      <Container color={color} {...rest} onPress={enabled ? rest.onPress : () => {}} style={[rest.style, { opacity: enabled ? 1 : .5 }]}>
          {isLoading ? (<ActivityIndicator size="small" color={theme.colors.shape}/>) : (<Title labelColor={labelColor}>{title}</Title>)}
       </Container>
    );

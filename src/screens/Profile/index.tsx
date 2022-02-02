@@ -23,11 +23,12 @@ import {
 import { useAuth } from '../../hooks/auth';
 import { Input } from '../../components/Input';
 import Button from '../../components/Button';
-import { Alert, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, StatusBar } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from "yup";
+import { useNetInfo } from '@react-native-community/netinfo';
 
 interface LauchImagePickerProps{
    cancelled: boolean;
@@ -46,6 +47,7 @@ const changeUserDataSchema = yup.object().shape({
 
 export function Profile(){
    const theme = useTheme();
+   const { isConnected } = useNetInfo();
    const { goBack, navigate } = useNavigation();
    const { data: { user }, handleUpdateUser, handleSignOut } = useAuth();
    const { control, handleSubmit, formState: { errors } } = useForm({
@@ -115,6 +117,7 @@ export function Profile(){
       <KeyboardAvoidingView behavior='position' enabled>
          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
          <Container>
+            <StatusBar translucent barStyle='light-content'/>
             <Header>
                <HeaderTop>
                   <BackButton iconColor={theme.colors.shape} onPress={goBack}/>
@@ -147,14 +150,14 @@ export function Profile(){
                   <Option
                      onPress={() => setOption("dataEdit")}
                      active={option === "dataEdit"}
-                     >
+                  >
                      <OptionTitle active={option === "dataEdit"}>Dados</OptionTitle>
                   </Option>
 
                   <Option
-                     onPress={() => setOption("passwordEdit")}
+                     onPress={() => isConnected ? setOption("passwordEdit") : Alert.alert("Você está desconectado", "Para mudar a senha, conecte-se a internet")}
                      active={option === "passwordEdit"}
-                     >
+                  >
                      <OptionTitle active={option === "passwordEdit"}>Trocar senha</OptionTitle>
                   </Option>
                </ContentHeader>

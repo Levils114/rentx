@@ -1,11 +1,11 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StatusBar } from 'react-native';
 import { useTheme } from 'styled-components';
-import { CarProps } from '../../@types/Car';
 import BackButton from '../../components/BackButton';
 import CarCard from '../../components/CarCard';
 import { LoadAnimated } from '../../components/LoadAnimated';
+import { Car } from '../../database/models/Car';
 import { api } from '../../services/api';
 
 import {
@@ -17,13 +17,12 @@ import {
    Appointments,
    AppointmentsTitle,
    AppointmentsQuantity,
-   
 } from './styles';
 
 interface Cars{
-   car: CarProps;
-   startDate: string;
-   endDate: string;
+   car: Car;
+   start_date: string;
+   end_date: string;
    id: number;
    user_id: number;
 }
@@ -31,6 +30,7 @@ interface Cars{
 export function MyCars(){
    const { goBack } = useNavigation();
    const theme = useTheme();
+   const isScreenFocus = useIsFocused();
 
    const [cars, setCars] = useState<Cars[]>([]);
    const [loading, setLoading] = useState(true);
@@ -38,11 +38,7 @@ export function MyCars(){
    useEffect(() => {
       async function fetchCars(){
          try{
-            const response = await api.get('/schedules_byuser', {
-               params: {
-                  user_id: 1,
-               }
-            });
+            const response = await api.get('/rentals');
 
             setCars(response.data);
          } catch(err){
@@ -53,7 +49,7 @@ export function MyCars(){
       };
 
       fetchCars();
-   }, []);
+   }, [isScreenFocus]);
 
    return(
       <Container>
@@ -86,7 +82,7 @@ export function MyCars(){
                   keyExtractor={item => item.id.toString()}
                   showsVerticalScrollIndicator={false}
                   renderItem={({ item }) => (
-                     <CarCard carData={item.car} startDate={item.startDate} endDate={item.endDate}/>
+                     <CarCard carData={item.car} startDate={item.start_date} endDate={item.end_date}/>
                   )}
                />
             </Content>

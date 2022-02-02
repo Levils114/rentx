@@ -94,5 +94,16 @@ export const AccessoriesContainer = styled.View`
 export const Footer = styled.View`
    background-color: ${props => props.theme.colors.background_primary};
 
-   padding: 24px 24px ${getBottomSpace() + 24}px;
+   padding: 24px 24px 24px;
+`;
+
+export const OfflineInfoText = styled.Text`
+   font-family: ${props => props.theme.fonts.primary_400};
+   font-size: ${RFValue(10)}px;
+
+   color: ${props => props.theme.colors.main};
+
+   text-align: center;
+
+   margin-top: 8px;
 `;
